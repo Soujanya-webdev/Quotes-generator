@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Quote-to-Post Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .glass-dark {
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-content {
+            text-align: center;
+            z-index: 10;
+            max-width: 800px;
+            padding: 2rem;
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: 800;
+            background: linear-gradient(45deg, #fff, #e0e7ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            animation: fadeInUp 1s ease-out;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 2rem;
+            animation: fadeInUp 1s ease-out 0.2s both;
+        }
+
+        .cta-button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            animation: fadeInUp 1s ease-out 0.4s both;
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+        }
+
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: none;
+        }
+
+        .app-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .app-header h1 {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .app-grid {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 2rem;
+            min-height: 800px;
+        }
+
+        .canvas-section {
+            position: relative;
+        }
+
+        .quote-canvas {
+            width: 100%;
+            height: 600px;
+            position: relative;
+            margin: 0 auto;
+            transition: all 0.5s ease;
+            overflow: hidden;
+        }
+
+        .quote-display {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2rem;
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .quote-text {
+            font-size: 2rem;
+            font-weight: 600;
+            line-height: 1.4;
+            margin-bottom: 1rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .quote-author {
+            font-size: 1.1rem;
+            opacity: 0.8;
+            font-style: italic;
+            position: relative;
+            z-index: 2;
+        }
+
+        .controls-panel {
+            padding: 1.5rem;
+            max-height: 800px;
+            overflow-y: auto;
+        }
+
+        .control-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .control-group h3 {
+            color: white;
+            font-size: 1.1rem;
+            margin-bottom: 0.8rem;
+            font-weight: 600;
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+        }
+
+        .input-group label {
+            display: block;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        input::placeholder, textarea::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .btn {
+            padding: 0.6rem 1rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .aspect-ratio-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .aspect-btn {
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            text-align: center;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .aspect-btn.active {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+        }
+
+        .theme-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .theme-btn {
+            aspect-ratio: 1;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .theme-btn.active {
+            border-color: white;
+            transform: scale(1.1);
+        }
+
+        .theme-clean { background: linear-gradient(135deg, #f5f7fa, #c3cfe2); }
+        .theme-midnight { background: linear-gradient(135deg, #2c3e50, #4a6741); }
+        .theme-sunset { background: linear-gradient(135deg, #ff7e5f, #feb47b); }
+        .theme-aurora { background: linear-gradient(135deg, #00c6ff, #0072ff); }
+        .theme-paper { background: linear-gradient(135deg, #f7f1e3, #e8d5b7); }
+
+        .color-picker-group {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .color-picker {
+            width: 100%;
+            height: 40px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .export-section {
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .floating-element {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+
+        .animate-text {
+            animation: typewriter 2s steps(40, end);
+        }
+
+        @keyframes typewriter {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+
+        .back-button {
+            position: fixed;
+            top: 2rem;
+            left: 2rem;
+            z-index: 1000;
+            padding: 0.8rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .app-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .quote-canvas {
+                height: 400px;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+        }
+
+        .ai-features {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .ai-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a6f);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0.2rem;
+        }
+
+        .ai-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .preview-mode {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .preview-item {
+            flex: 1;
+            min-width: 200px;
+            height: 150px;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .preview-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .preview-label {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 0.5rem;
+            font-size: 0.8rem;
+            text-align: center;
+        }
+
+        /* Enhanced Typography Controls Styling */
+        .align-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.3rem;
+            margin-top: 0.3rem;
+        }
+
+        .align-btn {
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .align-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .align-btn.active {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+        }
+
+        /* Enhanced Color Controls */
+        .color-section {
+            display: grid;
+            gap: 0.8rem;
+        }
+
+        .color-item {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 0.8rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .color-item label {
+            display: block;
+            font-size: 0.8rem;
+            margin-bottom: 0.4rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .color-input-wrapper {
+            display: grid;
+            grid-template-columns: 60px 1fr auto;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .color-picker {
+            width: 50px;
+            height: 35px;
+            padding: 0;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+        }
+
+        .opacity-slider {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            height: 6px;
+            appearance: none;
+            outline: none;
+        }
+
+        .opacity-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            cursor: pointer;
+            border: 2px solid white;
+        }
+
+        .opacity-value {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.8);
+            min-width: 35px;
+            text-align: right;
+        }
+
+        /* Range Input Enhancements */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            padding: 0;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            cursor: pointer;
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            transition: all 0.2s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Enhanced Select Styling */
+        select {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 0.6rem;
+            color: white;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        select:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+        }
+
+        /* Custom theme controls */
+        .custom-colors {
+            display: none;
+            margin-top: 0.5rem;
+        }
+
+        .custom-colors.active {
+            display: grid;
+            gap: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Landing Page -->
+    <div id="landing-page" class="hero">
+        <!-- Animated Background Particles -->
+        <div class="particles" id="particles"></div>
+        
+        <div class="hero-content glass">
+            <h1>Ultimate Quote-to-Post Generator</h1>
+            <p>Transform your favorite quotes into stunning, professional social media posts with AI-powered design suggestions and advanced customization.</p>
+            <button class="cta-button" onclick="startApp()">
+                Start Creating Now ✨
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="main-app" class="app-container">
+        <button class="back-button" onclick="goHome()">← Home</button>
+        
+        <div class="app-header">
+            <h1>Create Your Perfect Quote Post</h1>
+        </div>
+
+        <div class="app-grid">
+            <!-- Canvas Section -->
+            <div class="canvas-section">
+                <div class="quote-canvas glass" id="quote-canvas">
+                    <div class="quote-display" id="quote-display">
+                        <div class="quote-text" id="quote-text">
+                            "The only way to do great work is to love what you do."
+                        </div>
+                        <div class="quote-author" id="quote-author">
+                            — Steve Jobs
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preview Mode -->
+                <div class="preview-mode" id="preview-mode" style="display: none;">
+                    <div class="preview-item" data-ratio="1:1">
+                        <div class="preview-display"></div>
+                        <div class="preview-label">Instagram Square (1:1)</div>
+                    </div>
+                    <div class="preview-item" data-ratio="4:5">
+                        <div class="preview-display"></div>
+                        <div class="preview-label">Instagram Portrait (4:5)</div>
+                    </div>
+                    <div class="preview-item" data-ratio="9:16">
+                        <div class="preview-display"></div>
+                        <div class="preview-label">Stories/Reels (9:16)</div>
+                    </div>
+                    <div class="preview-item" data-ratio="16:9">
+                        <div class="preview-display"></div>
+                        <div class="preview-label">LinkedIn/YouTube (16:9)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls Panel -->
+            <div class="controls-panel glass-dark">
+                <!-- Quote Input -->
+                <div class="control-group">
+                    <h3>📝 Quote Content</h3>
+                    <div class="input-group">
+                        <label>Quote Text</label>
+                        <textarea id="quote-input" placeholder="Enter your inspiring quote...">The only way to do great work is to love what you do.</textarea>
+                    </div>
+                    <div class="input-group">
+                        <label>Author</label>
+                        <input type="text" id="author-input" placeholder="Quote author..." value="Steve Jobs">
+                    </div>
+                    <div class="ai-features">
+                        <button class="ai-btn" onclick="rewriteQuote()">✨ AI Rewrite</button>
+                        <button class="ai-btn" onclick="generateHashtags()">🏷️ Generate Hashtags</button>
+                        <button class="ai-btn" onclick="suggestTheme()">🎨 Suggest Theme</button>
+                    </div>
+                </div>
+
+                <!-- Typography Controls -->
+                <div class="control-group">
+                    <h3>✍️ Typography</h3>
+                    <div class="input-group">
+                        <label>Font Family</label>
+                        <select id="font-family">
+                            <option value="Inter, sans-serif">Inter</option>
+                            <option value="Georgia, serif">Georgia</option>
+                            <option value="Montserrat, sans-serif">Montserrat</option>
+                            <option value="Playfair Display, serif">Playfair Display</option>
+                            <option value="Roboto, sans-serif">Roboto</option>
+                            <option value="Arial, sans-serif">Arial</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Font Size</label>
+                        <input type="range" id="font-size" min="1" max="4" value="2" step="0.1">
+                    </div>
+                    <div class="input-group">
+                        <label>Text Alignment</label>
+                        <select id="text-align">
+                            <option value="center">Center</option>
+                            <option value="left">Left</option>
+                            <option value="right">Right</option>
+                            <option value="justify">Justify</option>
+                        </select>
+                    </div>
+                    <!-- <div class="input-group">
+                        <label>Animation</label>
+                        <select id="text-animation">
+                            <option value="none">None</option>
+                            <option value="typewriter">Typewriter</option>
+                        </select>
+                    </div> -->
+                </div>
+
+                <!-- Aspect Ratio -->
+                <div class="control-group">
+                    <h3>📱 Format</h3>
+                    <div class="aspect-ratio-buttons">
+                        <div class="aspect-btn active" data-ratio="1:1">1:1<br><small>IG Square</small></div>
+                        <div class="aspect-btn" data-ratio="4:5">4:5<br><small>IG Post</small></div>
+                        <div class="aspect-btn" data-ratio="9:16">9:16<br><small>Stories</small></div>
+                        <div class="aspect-btn" data-ratio="16:9">16:9<br><small>YouTube</small></div>
+                    </div>
+                </div>
+
+                <!-- Themes -->
+                <div class="control-group">
+                    <h3>🎨 Themes</h3>
+                    <div class="theme-grid">
+                        <div class="theme-btn theme-clean active" data-theme="clean"></div>
+                        <div class="theme-btn theme-midnight" data-theme="midnight"></div>
+                        <div class="theme-btn theme-sunset" data-theme="sunset"></div>
+                        <div class="theme-btn theme-aurora" data-theme="aurora"></div>
+                        <div class="theme-btn theme-paper" data-theme="paper"></div>
+                        <!-- <div class="theme-btn" data-theme="custom" style="background: linear-gradient(45deg, #667eea, #764ba2);">+</div> -->
+                    </div>
+                    <!-- Custom Colors Panel -->
+                    <div class="custom-colors" id="custom-colors">
+                        <div class="input-group">
+                            <label>Background Color 1</label>
+                            <input type="color" id="bg-color1" value="#667eea">
+                        </div>
+                        <div class="input-group">
+                            <label>Background Color 2</label>
+                            <input type="color" id="bg-color2" value="#764ba2">
+                        </div>
+                        <div class="input-group">
+                            <label>Text Color</label>
+                            <input type="color" id="text-color" value="#ffffff">
+                        </div>
+                        <div class="input-group">
+                            <label>Author Color</label>
+                            <input type="color" id="author-color" value="#e0e7ff">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Controls -->
+                <div class="control-group">
+                    <h3>⚡ Quick Actions</h3>
+                    <div class="button-group">
+                        <button class="btn btn-secondary" onclick="randomizeStyle()">🎲 Randomize</button>
+                        <button class="btn btn-secondary" onclick="togglePreview()">👁️ Preview</button>
+                    </div>
+                </div>
+
+                <!-- Export -->
+                <div class="export-section">
+                    <h3>💾 Export</h3>
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="exportImage('png')">PNG</button>
+                        <button class="btn btn-primary" onclick="exportImage('jpeg')">JPEG</button>
+                    </div>
+                    <button class="btn btn-secondary" onclick="exportAllSizes()" style="width: 100%; margin-top: 0.5rem;">📦 Export All Sizes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let currentTheme = 'clean';
+        let currentRatio = '1:1';
+        let previewMode = false;
+
+        // Initialize particles
+        function createParticles() {
+            const particles = document.getElementById('particles');
+            if (!particles) return;
+            
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'floating-element';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (Math.random() * 4 + 4) + 's';
+                particles.appendChild(particle);
+            }
+        }
+
+        // Start application
+        function startApp() {
+            const landingPage = document.getElementById('landing-page');
+            const mainApp = document.getElementById('main-app');
+            
+            if (landingPage && mainApp) {
+                landingPage.style.display = 'none';
+                mainApp.style.display = 'block';
+                updateQuoteDisplay();
+            }
+        }
+
+        // Go back to home
+        function goHome() {
+            const landingPage = document.getElementById('landing-page');
+            const mainApp = document.getElementById('main-app');
+            
+            if (landingPage && mainApp) {
+                mainApp.style.display = 'none';
+                landingPage.style.display = 'flex';
+            }
+        }
+
+        // Theme definitions
+        const themes = {
+            clean: {
+                background: 'linear-gradient(135deg, #f5f7fa, #c3cfe2)',
+                textColor: '#2c3e50',
+                authorColor: '#7f8c8d'
+            },
+            midnight: {
+                background: 'linear-gradient(135deg, #2c3e50, #4a6741)',
+                textColor: '#ecf0f1',
+                authorColor: '#bdc3c7'
+            },
+            sunset: {
+                background: 'linear-gradient(135deg, #ff7e5f, #feb47b)',
+                textColor: '#ffffff',
+                authorColor: '#f8f9fa'
+            },
+            aurora: {
+                background: 'linear-gradient(135deg, #00c6ff, #0072ff)',
+                textColor: '#ffffff',
+                authorColor: '#e3f2fd'
+            },
+            paper: {
+                background: 'linear-gradient(135deg, #f7f1e3, #e8d5b7)',
+                textColor: '#3e2723',
+                authorColor: '#5d4e37'
+            }
+        };
+
+        // Update quote display
+        function updateQuoteDisplay() {
+            const quoteText = document.getElementById('quote-text');
+            const quoteAuthor = document.getElementById('quote-author');
+            const quoteDisplay = document.getElementById('quote-display');
+            const quoteInput = document.getElementById('quote-input');
+            const authorInput = document.getElementById('author-input');
+            
+            if (!quoteText || !quoteAuthor || !quoteDisplay || !quoteInput || !authorInput) return;
+            
+            // Update text content
+            quoteText.textContent = `"${quoteInput.value}"`;
+            quoteAuthor.textContent = `— ${authorInput.value}`;
+            
+            // Apply theme
+            const theme = themes[currentTheme];
+            if (theme) {
+                quoteDisplay.style.background = theme.background;
+                quoteText.style.color = theme.textColor;
+                quoteAuthor.style.color = theme.authorColor;
+            }
+            
+            // Apply custom colors if theme is custom
+            if (currentTheme === 'custom') {
+                const bgColor1 = document.getElementById('bg-color1');
+                const bgColor2 = document.getElementById('bg-color2');
+                const textColor = document.getElementById('text-color');
+                const authorColor = document.getElementById('author-color');
+                
+                if (bgColor1 && bgColor2 && textColor && authorColor) {
+                    quoteDisplay.style.background = `linear-gradient(135deg, ${bgColor1.value}, ${bgColor2.value})`;
+                    quoteText.style.color = textColor.value;
+                    quoteAuthor.style.color = authorColor.value;
+                }
+            }
+            
+            // Apply font settings
+            const fontFamily = document.getElementById('font-family');
+            const fontSize = document.getElementById('font-size');
+            const textAlign = document.getElementById('text-align');
+            
+            if (fontFamily && fontSize && textAlign) {
+                quoteText.style.fontFamily = fontFamily.value;
+                quoteAuthor.style.fontFamily = fontFamily.value;
+                quoteText.style.fontSize = fontSize.value + 'rem';
+                quoteDisplay.style.textAlign = textAlign.value;
+            }
+            
+            // Apply aspect ratio
+            updateAspectRatio();
+            
+            // Apply animation
+            applyAnimation();
+        }
+
+        // Update aspect ratio
+        function updateAspectRatio() {
+            const canvas = document.getElementById('quote-canvas');
+            if (!canvas) return;
+            
+            const ratios = {
+                '1:1': { width: '600px', height: '600px' },
+                '4:5': { width: '600px', height: '750px' },
+                '9:16': { width: '400px', height: '711px' },
+                '16:9': { width: '800px', height: '450px' }
+            };
+            
+            const ratio = ratios[currentRatio];
+            if (ratio) {
+                canvas.style.width = ratio.width;
+                canvas.style.height = ratio.height;
+                canvas.style.maxWidth = '100%';
+            }
+        }
+
+        // Apply animation
+        function applyAnimation() {
+            const animation = document.getElementById('text-animation');
+            const quoteText = document.getElementById('quote-text');
+            
+            if (!animation || !quoteText) return;
+            
+            // Remove existing animation classes
+            quoteText.classList.remove('animate-text');
+            
+            if (animation.value === 'typewriter') {
+                quoteText.classList.add('animate-text');
+            }
+        }
+
+        // AI Features
+        function rewriteQuote() {
+            const quotes = [
+                "Success is not final, failure is not fatal: it is the courage to continue that counts.",
+                "The future belongs to those who believe in the beauty of their dreams.",
+                "Innovation distinguishes between a leader and a follower.",
+                "Your limitation—it's only your imagination.",
+                "Great things never come from comfort zones.",
+                "Don't watch the clock; do what it does. Keep going.",
+                "The way to get started is to quit talking and begin doing.",
+                "The pessimist sees difficulty in every opportunity. The optimist sees opportunity in every difficulty.",
+                "It is during our darkest moments that we must focus to see the light.",
+                "Believe you can and you're halfway there."
+            ];
+            const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+            const quoteInput = document.getElementById('quote-input');
+            
+            if (quoteInput) {
+                quoteInput.value = randomQuote;
+                updateQuoteDisplay();
+            }
+        }
+
+        function generateHashtags() {
+            const hashtags = "#motivation #inspiration #quotes #success #mindset #goals #positivity #growth #wisdom #life";
+            alert(`Suggested hashtags:\n${hashtags}`);
+        }
+
+        function suggestTheme() {
+            const themeNames = ['clean', 'midnight', 'sunset', 'aurora', 'paper'];
+            const suggestedTheme = themeNames[Math.floor(Math.random() * themeNames.length)];
+            
+            // Apply suggested theme
+            currentTheme = suggestedTheme;
+            
+            // Update UI
+            document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+            const themeBtn = document.querySelector(`[data-theme="${suggestedTheme}"]`);
+            if (themeBtn) {
+                themeBtn.classList.add('active');
+            }
+            
+            updateQuoteDisplay();
+        }
+
+        // Randomize style
+        function randomizeStyle() {
+            // Random theme
+            const themeNames = ['clean', 'midnight', 'sunset', 'aurora', 'paper'];
+            currentTheme = themeNames[Math.floor(Math.random() * themeNames.length)];
+            
+            // Random font
+            const fonts = ['Inter, sans-serif', 'Georgia, serif', 'Montserrat, sans-serif', 'Playfair Display, serif', 'Roboto, sans-serif'];
+            const fontFamily = document.getElementById('font-family');
+            if (fontFamily) {
+                fontFamily.value = fonts[Math.floor(Math.random() * fonts.length)];
+            }
+            
+            // Random font size
+            const fontSize = document.getElementById('font-size');
+            if (fontSize) {
+                fontSize.value = (Math.random() * 2 + 1.5).toFixed(1);
+            }
+            
+            // Random alignment
+            const alignments = ['left', 'center', 'right'];
+            const textAlign = document.getElementById('text-align');
+            if (textAlign) {
+                textAlign.value = alignments[Math.floor(Math.random() * alignments.length)];
+            }
+            
+            // Update UI
+            document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+            const themeBtn = document.querySelector(`[data-theme="${currentTheme}"]`);
+            if (themeBtn) {
+                themeBtn.classList.add('active');
+            }
+            
+            updateQuoteDisplay();
+        }
+
+        // Toggle preview mode
+        function togglePreview() {
+            previewMode = !previewMode;
+            const canvas = document.getElementById('quote-canvas');
+            const preview = document.getElementById('preview-mode');
+            
+            if (!canvas || !preview) return;
+            
+            if (previewMode) {
+                canvas.style.display = 'none';
+                preview.style.display = 'flex';
+                updateAllPreviews();
+            } else {
+                canvas.style.display = 'block';
+                preview.style.display = 'none';
+            }
+        }
+
+        // Update all preview sizes
+        function updateAllPreviews() {
+            const previews = document.querySelectorAll('.preview-item');
+            const quoteInput = document.getElementById('quote-input');
+            const authorInput = document.getElementById('author-input');
+            const fontFamily = document.getElementById('font-family');
+            const textAlign = document.getElementById('text-align');
+            
+            if (!quoteInput || !authorInput || !fontFamily || !textAlign) return;
+            
+            previews.forEach(preview => {
+                const display = preview.querySelector('.preview-display');
+                if (!display) return;
+                
+                // Create miniature version
+                display.innerHTML = `
+                    <div style="
+                        width: 100%;
+                        height: 100%;
+                        background: ${themes[currentTheme].background};
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                        align-items: center;
+                        padding: 10px;
+                        color: ${themes[currentTheme].textColor};
+                        font-family: ${fontFamily.value};
+                        text-align: ${textAlign.value};
+                        font-size: 8px;
+                    ">
+                        <div style="margin-bottom: 5px; font-weight: 600;">
+                            "${quoteInput.value}"
+                        </div>
+                        <div style="font-size: 6px; opacity: 0.8; font-style: italic;">
+                            — ${authorInput.value}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // Export functionality
+        function exportImage(format) {
+            const element = document.getElementById('quote-display');
+            
+            if (!element || typeof html2canvas === 'undefined') {
+                alert('Export functionality not available. Please ensure html2canvas is loaded.');
+                return;
+            }
+            
+            html2canvas(element, {
+                backgroundColor: null,
+                scale: 2,
+                useCORS: true,
+                allowTaint: true
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `quote-post-${currentRatio.replace(':', 'x')}.${format}`;
+                
+                if (format === 'png') {
+                    link.href = canvas.toDataURL('image/png');
+                } else {
+                    link.href = canvas.toDataURL('image/jpeg', 0.9);
+                }
+                
+                link.click();
+            }).catch(error => {
+                console.error('Export failed:', error);
+                alert('Export failed. Please try again.');
+            });
+        }
+
+        // Export all sizes
+        function exportAllSizes() {
+            const ratios = ['1:1', '4:5', '9:16', '16:9'];
+            const originalRatio = currentRatio;
+            
+            let exportCount = 0;
+            
+            ratios.forEach((ratio, index) => {
+                setTimeout(() => {
+                    currentRatio = ratio;
+                    updateAspectRatio();
+                    
+                    setTimeout(() => {
+                        exportImage('png');
+                        exportCount++;
+                        
+                        if (exportCount === ratios.length) {
+                            // Restore original ratio
+                            currentRatio = originalRatio;
+                            updateAspectRatio();
+                        }
+                    }, 500);
+                }, index * 1000);
+            });
+        }
+
+        // Toggle custom colors panel
+        function toggleCustomColors(show) {
+            const customColors = document.getElementById('custom-colors');
+            if (customColors) {
+                customColors.classList.toggle('active', show);
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            createParticles();
+            
+            // Quote input listeners
+            const quoteInput = document.getElementById('quote-input');
+            const authorInput = document.getElementById('author-input');
+            
+            if (quoteInput) quoteInput.addEventListener('input', updateQuoteDisplay);
+            if (authorInput) authorInput.addEventListener('input', updateQuoteDisplay);
+            
+            // Font controls
+            const fontFamily = document.getElementById('font-family');
+            const fontSize = document.getElementById('font-size');
+            const textAlign = document.getElementById('text-align');
+            const textAnimation = document.getElementById('text-animation');
+            
+            if (fontFamily) fontFamily.addEventListener('change', updateQuoteDisplay);
+            if (fontSize) fontSize.addEventListener('input', updateQuoteDisplay);
+            if (textAlign) textAlign.addEventListener('change', updateQuoteDisplay);
+            if (textAnimation) textAnimation.addEventListener('change', updateQuoteDisplay);
+            
+            // Color controls
+            const textColor = document.getElementById('text-color');
+            const authorColor = document.getElementById('author-color');
+            const bgColor1 = document.getElementById('bg-color1');
+            const bgColor2 = document.getElementById('bg-color2');
+            
+            if (textColor) textColor.addEventListener('input', updateQuoteDisplay);
+            if (authorColor) authorColor.addEventListener('input', updateQuoteDisplay);
+            if (bgColor1) bgColor1.addEventListener('input', updateQuoteDisplay);
+            if (bgColor2) bgColor2.addEventListener('input', updateQuoteDisplay);
+            
+            // Aspect ratio buttons
+            document.querySelectorAll('.aspect-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.aspect-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentRatio = this.dataset.ratio;
+                    updateAspectRatio();
+                });
+            });
+            
+            // Theme buttons
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentTheme = this.dataset.theme;
+                    
+                    // Show/hide custom colors
+                    toggleCustomColors(currentTheme === 'custom');
+                    
+                    updateQuoteDisplay();
+                });
+            });
+            
+            // Preview item clicks
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.preview-item')) {
+                    const previewItem = e.target.closest('.preview-item');
+                    const ratio = previewItem.dataset.ratio;
+                    
+                    // Switch to single view with selected ratio
+                    currentRatio = ratio;
+                    togglePreview(); // This will switch back to single view
+                    
+                    // Update aspect ratio button
+                    document.querySelectorAll('.aspect-btn').forEach(b => b.classList.remove('active'));
+                    const aspectBtn = document.querySelector(`[data-ratio="${ratio}"]`);
+                    if (aspectBtn) {
+                        aspectBtn.classList.add('active');
+                    }
+                    
+                    updateAspectRatio();
+                }
+            });
+            
+            // Initialize display
+            updateQuoteDisplay();
+        });
+    </script>
+</body>
+</html>
