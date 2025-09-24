@@ -54,6 +54,4 @@ Customize fonts, alignment, and animation.
 
 Pick a format & theme.
 
-# Preview your post.
-
-Export & share everywhere 🌍.
+ 
